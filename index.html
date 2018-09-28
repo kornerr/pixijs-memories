@@ -5,14 +5,19 @@
         <title>Hello World</title>
     </head>
     <script src="pixi.min.js"></script>
+    <script src="main.js"></script>
     <body>
+        <center>
+            <p id="renderWindow"></p>
+        </center>
         <script type="text/javascript">
-            let type = "WebGL"
+            let type = "WebGL";
             if (!PIXI.utils.isWebGLSupported())
             {
-                type = "canvas"
+                type = "canvas";
             }
-            PIXI.utils.sayHello(type)
+            PIXI.utils.sayHello(type);
+            runGame();
         </script>
     </body>
 </html>
