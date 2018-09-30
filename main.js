@@ -15,20 +15,25 @@ class Item
         this.sprite.on(
             "pointerdown",
             () => {
-                this.onClick()
+                if (this.clickHandler)
+                {
+                    this.clickHandler()
+                }
             }
         );
+
+        this.clickHandler = null
+    }
+
+    setClickHandler(func)
+    {
+        this.clickHandler = func;
     }
 
     setPosition(x, y)
     {
         this.sprite.x = x;
         this.sprite.y = y;
-    }
-
-    onClick()
-    {
-        this.sprite.x += 5;
     }
 }
 
@@ -43,7 +48,14 @@ function runGame()
         for (var column = 0; column < 4; ++column)
         {
             var item = new Item(50, 0x55FFFF);
+
             item.setPosition(row * 100, column * 100);
+            item.setClickHandler(
+                () => {
+                    console.log("item clicked");
+                }
+            );
+
             app.stage.addChild(item.sprite);
         }
     }
