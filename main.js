@@ -1,9 +1,22 @@
 
+const WINDOW_SIZE = 660;
+
 const ROWS_COUNT = 4;
 const COLUMNS_COUNT = 4;
 
-const ITEM_SIZE = 50;
-const ITEM_SPACE = 100;
+const ITEM_SIZE = 40;
+const ITEM_SPACE = 110; 
+const DEFAULT_COLOR = 0xFFFFFF;
+const SELECTED_COLORS = [
+    0x555555,
+    0x000000,
+    0xFFFF00,
+    0x00FFFF,
+    0xFF00FF,
+    0x55AAFF,
+    0xFFAA55,
+    0x22AA22,
+];
 
 function createSprite(size, color)
 {
@@ -66,7 +79,7 @@ class Item
 function runGame()
 {
     var renderWindow = document.getElementById("renderWindow");
-    var app = new PIXI.Application(800, 600, {backgroundColor: 0xaa5555});
+    var app = new PIXI.Application(WINDOW_SIZE, WINDOW_SIZE, {backgroundColor: 0xaa5555});
     renderWindow.appendChild(app.view);
 
     var id = 0;
@@ -75,14 +88,20 @@ function runGame()
     {
         for (var column = 0; column < COLUMNS_COUNT; ++column)
         {
-            var item = new Item(ITEM_SIZE, 0x55FFFF, 0x555555);
+            var itemId = id++;
+            var itemMatchId = Math.floor(itemId / 2);
+            var selectedColor = SELECTED_COLORS[itemMatchId];
+            var item = new Item(ITEM_SIZE, DEFAULT_COLOR, selectedColor);
             app.stage.addChild(item.pixi);
 
-            item.id = id++;
-            item.setPosition(row * ITEM_SPACE, column * ITEM_SPACE);
+            item.id = itemId;
+            item.matchId = itemMatchId;
+            var x = ITEM_SPACE + column * ITEM_SPACE;
+            var y = ITEM_SPACE + row * ITEM_SPACE;
+            item.setPosition(x, y);
             item.clickHandler = function(item) {
                 item.setSelected(true);
-                console.log("item '" + item.id + "' clicked");
+                console.log("item.id: '" + item.id + "' item.matchId: '" + item.matchId + "'");
             };
         }
     }
