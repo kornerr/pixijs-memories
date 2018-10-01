@@ -1,4 +1,6 @@
 
+const BACKGROUND_COLOR = 0xCCCCCC;
+const BACKGROUND_COLOR_VICTORY = 0x55FF55;
 const WINDOW_SIZE = 660;
 
 const ROWS_COUNT = 4;
@@ -30,20 +32,18 @@ function createSprite(size, color)
 
 class Item
 {
-    constructor(size, defaultColor, selectedColor)
+    constructor(size)
     {
+        // Keep size.
+        this.size = size;
+
         // Define properties.
         this.clickHandler = null;
         this.id = null;
         this.matchId = null;
 
-        // Create a sprite for each state.
-        this.defaultSprite = createSprite(size, defaultColor);
-        this.selectedSprite = createSprite(size, selectedColor);
-        // Add sprites to container.
+        // Create container to host default and selected states.
         this.pixi = new PIXI.Container();
-        this.pixi.addChild(this.defaultSprite);
-        this.pixi.addChild(this.selectedSprite);
 
         // Setup interaction.
         this.pixi.interactive = true;
@@ -57,6 +57,17 @@ class Item
                 }
             }
         );
+
+    }
+
+    setColors(defaultColor, selectedColor)
+    {
+        // Create sprites to depict default/selected states.
+        this.defaultSprite = createSprite(this.size, defaultColor);
+        this.selectedSprite = createSprite(this.size, selectedColor);
+        this.pixi.removeChildren();
+        this.pixi.addChild(this.defaultSprite);
+        this.pixi.addChild(this.selectedSprite);
 
         // Reset state.
         this.setSelected(false);
@@ -76,36 +87,116 @@ class Item
     }
 }
 
-function runGame()
+class Game
 {
-    var renderWindow = document.getElementById("renderWindow");
-    var app = new PIXI.Application(WINDOW_SIZE, WINDOW_SIZE, {backgroundColor: 0xaa5555});
-    renderWindow.appendChild(app.view);
-
-    var id = 0;
-
-    for (var row = 0; row < ROWS_COUNT; ++row)
+    constructor()
     {
-        for (var column = 0; column < COLUMNS_COUNT; ++column)
-        {
-            var itemId = id++;
-            var itemMatchId = Math.floor(itemId / 2);
-            var selectedColor = SELECTED_COLORS[itemMatchId];
-            var item = new Item(ITEM_SIZE, DEFAULT_COLOR, selectedColor);
-            app.stage.addChild(item.pixi);
+        this.gameHasBeenWon = null;
+        this.selectedItems = [];
 
-            item.id = itemId;
-            item.matchId = itemMatchId;
-            var x = ITEM_SPACE + column * ITEM_SPACE;
-            var y = ITEM_SPACE + row * ITEM_SPACE;
-            item.setPosition(x, y);
-            item.clickHandler = function(item) {
-                item.setSelected(true);
-                console.log("item.id: '" + item.id + "' item.matchId: '" + item.matchId + "'");
-            };
+        this.setupItems();
+    }
+
+    setupItems()
+    {
+        this.root = new PIXI.Container();
+
+        var id = 0;
+        for (var row = 0; row < ROWS_COUNT; ++row)
+        {
+            for (var column = 0; column < COLUMNS_COUNT; ++column)
+            {
+                // Create and add.
+                var item = new Item(ITEM_SIZE);
+                this.root.addChild(item.pixi);
+
+                // Configure identification.
+                item.id = id++;
+                item.matchId = Math.floor(item.id / 2);
+                var selectedColor = SELECTED_COLORS[item.matchId];
+                item.setColors(DEFAULT_COLOR, selectedColor);
+
+                // Configure position.
+                var x = ITEM_SPACE + column * ITEM_SPACE;
+                var y = ITEM_SPACE + row * ITEM_SPACE;
+                item.setPosition(x, y);
+
+                // Configure selection.
+                item.clickHandler = (item) => {
+                    this.selectItem(item);
+                };
+            }
         }
     }
 
+    selectItem(item)
+    {
+        console.log("select item.id: '" + item.id + "' item.matchId: '" + item.matchId + "'");
+        // Collect selected items.
+        this.selectedItems.push(item);
+        // Depict selection.
+        item.setSelected(true);
 
+        // Make sure there is a pair of items.
+        if (this.selectedItems.length != 2)
+        {
+            return;
+        }
 
+        var item1 = this.selectedItems[0];
+        var item2 = this.selectedItems[1];
+
+        // Deselect items.
+        this.selectedItems = [];
+        item1.setSelected(false);
+        item2.setSelected(false);
+
+        // Remove matching items.
+        if (item1.matchId == item2.matchId)
+        {
+            this.removeMatchingItems(item1, item2);
+            this.reportVictoryIfNoItemsLeft();
+        }
+        // Do nothing if items do not match.
+        else
+        {
+            console.log("items DO NOT match");
+        }
+    }
+
+    removeMatchingItems(item1, item2)
+    {
+        this.root.removeChild(item1.pixi);
+        this.root.removeChild(item2.pixi);
+    }
+
+    reportVictoryIfNoItemsLeft()
+    {
+        // Make sure there are no items left.
+        if (this.root.children.length > 0)
+        {
+            return;
+        }
+
+        // Report victory by changing background color.
+        if (this.gameHasBeenWon)
+        {
+            this.gameHasBeenWon();
+        }
+    }
+}
+
+function runGame()
+{
+    var renderWindow = document.getElementById("renderWindow");
+    var app = new PIXI.Application(WINDOW_SIZE, WINDOW_SIZE, {backgroundColor: BACKGROUND_COLOR});
+    renderWindow.appendChild(app.view);
+
+    var game = new Game();
+    app.stage.addChild(game.root);
+
+    // Change background color when the game is over.
+    game.gameHasBeenWon = () => {
+        app.renderer.backgroundColor = BACKGROUND_COLOR_VICTORY;
+    };
 }
